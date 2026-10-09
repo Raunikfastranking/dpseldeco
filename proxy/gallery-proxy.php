@@ -1,5 +1,6 @@
 <?php
 require_once dirname(__DIR__) . '/proxy/config.php';
+require_once dirname(__DIR__) . '/includes/api-cache.php';
 
 header('Content-Type: application/json; charset=utf-8');
 
@@ -22,9 +23,17 @@ if ($year === 'all') {
     exit;
 }
 
+$cacheKey = 'gallery_' . $branchId . '_' . $year;
+$cached = dps_cache_get($cacheKey);
+if ($cached !== null) {
+    echo is_string($cached) ? $cached : json_encode($cached);
+    exit;
+}
+
 $ch = curl_init($url);
 curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-curl_setopt($ch, CURLOPT_TIMEOUT, 30);
+curl_setopt($ch, CURLOPT_TIMEOUT, 15);
+curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 5);
 curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
 curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 0);
 curl_setopt($ch, CURLOPT_HTTPHEADER, api_auth_headers());
@@ -33,16 +42,16 @@ $response = curl_exec($ch);
 $status = (int) curl_getinfo($ch, CURLINFO_HTTP_CODE);
 curl_close($ch);
 
-// Debug logging
-error_log('[DEBUG gallery-proxy] URL: ' . $url);
-error_log('[DEBUG gallery-proxy] HTTP Status: ' . $status);
-if ($response !== false) {
-    $decoded = json_decode($response, true);
-    if ($decoded && isset($decoded['data']) && is_array($decoded['data'])) {
-        error_log('[DEBUG gallery-proxy] Total records returned: ' . count($decoded['data']));
-    }
-} else {
-    error_log('[DEBUG gallery-proxy] Response is false');
+if ($response !== false && $status === 200) {
+    dps_cache_set($cacheKey, $response);
+    echo $response;
+    exit;
+}
+
+$stale = dps_cache_get_stale($cacheKey);
+if ($stale !== null) {
+    echo is_string($stale) ? $stale : json_encode($stale);
+    exit;
 }
 
 http_response_code($status > 0 ? $status : 502);

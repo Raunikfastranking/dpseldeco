@@ -1,7 +1,13 @@
 <?php
 require_once dirname(__DIR__) . '/proxy/config.php';
+require_once __DIR__ . '/api-cache.php';
 
 // Fetches active school sessions (no branch_id needed)
+$cached = dps_cache_get('school_sessions');
+if (is_array($cached)) {
+    return $cached;
+}
+
 $apiUrl = "https://dps.allenhouseschools.com/api/school-sessions";
 
 $ch = curl_init($apiUrl);
@@ -18,15 +24,19 @@ $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
 curl_close($ch);
 
 if ($response === false || $httpCode !== 200) {
-    return [];
+    return dps_cache_get_stale('school_sessions') ?? [];
 }
 
 $json = json_decode($response, true);
 
 if (!is_array($json) || !isset($json['status']) || $json['status'] !== 'success') {
-    return [];
+    return dps_cache_get_stale('school_sessions') ?? [];
 }
 
 // Extract the actual sessions list (paginated under data.data)
-return $json['data']['data'] ?? [];
+$sessions = $json['data']['data'] ?? [];
+if (is_array($sessions) && $sessions !== []) {
+    dps_cache_set('school_sessions', $sessions);
+}
+return $sessions;
 ?>
