@@ -1,7 +1,13 @@
 <?php
 require_once dirname(__DIR__) . '/proxy/config.php';
+require_once __DIR__ . '/api-cache.php';
 
 // Fetches cities associated with branch (213 items, not paginated)
+$cached = dps_cache_get('cities_' . DPS_ELDECO_BRANCH_ID);
+if (is_array($cached)) {
+    return $cached;
+}
+
 $branchId = DPS_ELDECO_BRANCH_ID;
 $apiUrl = "https://dps.allenhouseschools.com/api/cities/{$branchId}";
 
@@ -19,19 +25,26 @@ $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
 curl_close($ch);
 
 if ($response === false || $httpCode !== 200) {
-    return [];
+    return dps_cache_get_stale('cities_' . DPS_ELDECO_BRANCH_ID) ?? [];
 }
 
 $json = json_decode($response, true);
 
 // Handle both possible structures: wrapped {status, count, data: [...]} or direct array
 if (is_array($json) && isset($json['status']) && $json['status'] === 'success') {
-    return $json['data'] ?? [];           // wrapped version
+    $cities = $json['data'] ?? [];           // wrapped version
+    if (is_array($cities) && $cities !== []) {
+        dps_cache_set('cities_' . $branchId, $cities);
+    }
+    return $cities;
 }
 
 if (is_array($json)) {
-    return $json;                         // direct array version
+    if ($json !== []) {
+        dps_cache_set('cities_' . $branchId, $json);
+    }
+    return $json;                            // direct array version
 }
 
-return [];
+return dps_cache_get_stale('cities_' . $branchId) ?? [];
 ?>

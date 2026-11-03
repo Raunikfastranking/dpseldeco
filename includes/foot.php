@@ -301,6 +301,8 @@
 <script>
   const BASE_URL = "<?= rtrim((isset($_SERVER['HTTPS']) ? 'https' : 'http') . '://' . $_SERVER['HTTP_HOST'], '/') ?>";
   document.addEventListener("DOMContentLoaded", function() {
+    if (document.getElementById("ee-form-15-popup")) return;
+
      const enquiryForm = document.getElementById("enquiryForm");
 const estudent_name = document.getElementById("estudent_name");
 const eparent_name = document.getElementById("eparent_name");
@@ -361,6 +363,7 @@ const submitBtn = document.getElementById("submitBtn");
 </script>
 <script>
   document.addEventListener("DOMContentLoaded", function() {
+    if (document.getElementById("ee-form-15-popup")) return;
 
     /* =========================
        CUSTOM CITY DROPDOWN

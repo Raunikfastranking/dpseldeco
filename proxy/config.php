@@ -3,6 +3,8 @@
 define('API_BASE_URL', 'https://allenp.superhouseerp.com');
 define('DPS_ELDECO_BRANCH_ID', 2);
 define('API_JWT_TOKEN', 'hgutuyg758374tg5f3738y87gusdfjhgjh$@.hgjgjhikj');
+// Secret key for /cache-refresh and /warm-cache endpoints (change if leaked)
+define('DPS_CACHE_REFRESH_KEY', 'dpsEld3co_refresh_9f2c7a41e8b6');
 
 if (!function_exists('api_auth_headers')) {
     /**

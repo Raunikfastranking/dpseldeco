@@ -21,26 +21,36 @@ $pageApiUrl = "https://dps.allenhouseschools.com/api/pages/$pageSlug";
 
 // Fetch page data
 require_once __DIR__ . '/proxy/config.php';
+require_once __DIR__ . '/includes/api-cache.php';
 
-$pageCh = curl_init($pageApiUrl);
-curl_setopt_array($pageCh, [
-    CURLOPT_RETURNTRANSFER => true,
-    CURLOPT_TIMEOUT        => 15,
-    CURLOPT_CONNECTTIMEOUT => 5,
-    CURLOPT_SSL_VERIFYPEER => false,
-    CURLOPT_HTTPHEADER     => api_auth_headers(),
-]);
-$pageResponse = curl_exec($pageCh);
-$pageHttpCode = curl_getinfo($pageCh, CURLINFO_HTTP_CODE);
-curl_close($pageCh);
+$pageCacheKey = 'page_' . md5($pageSlug);
+$pageData2 = dps_cache_get($pageCacheKey);
 
-if ($pageResponse === false || empty($pageResponse) || $pageHttpCode !== 200) {
-    header("HTTP/1.0 404 Not Found");
-    include "404.php";
-    exit;
+if ($pageData2 === null) {
+    $pageCh = curl_init($pageApiUrl);
+    curl_setopt_array($pageCh, [
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_TIMEOUT        => 15,
+        CURLOPT_CONNECTTIMEOUT => 5,
+        CURLOPT_SSL_VERIFYPEER => false,
+        CURLOPT_HTTPHEADER     => api_auth_headers(),
+    ]);
+    $pageResponse = curl_exec($pageCh);
+    $pageHttpCode = curl_getinfo($pageCh, CURLINFO_HTTP_CODE);
+    curl_close($pageCh);
+
+    if ($pageResponse !== false && !empty($pageResponse) && $pageHttpCode === 200) {
+        $decoded = json_decode($pageResponse, true);
+        if ($decoded !== null) {
+            dps_cache_set($pageCacheKey, $decoded);
+            $pageData2 = $decoded;
+        }
+    }
+    if ($pageData2 === null) {
+        $pageData2 = dps_cache_get_stale($pageCacheKey);
+    }
 }
 
-$pageData2 = json_decode($pageResponse, true);
 if (!isset($pageData2['data']) || empty($pageData2['data'])) {
     header("HTTP/1.0 404 Not Found");
     include "404.php";
