@@ -193,151 +193,13 @@ html, body {
                 <?= $process_steps[1]['title'] ?? '' ?>
                 <?= $process_steps[1]['content'] ?? '' ?>
                 <div
-                    class="sm:mt-20 mt-10 mx-4 2xl:w-[1280px] lg:w-[1024px] md:w-[767px] sm:w-[640px] sm:mx-auto sm:px-5 px-4">
+                    class="mt-10 w-full max-w-[1024px] mx-auto px-4 sm:px-5">
                     <div class="relative">
-                        <h2 class="text-center sm:text-[32px] text-[28px] font-[700] text-blue-main leading-9">
+                        <h2 class="process-enquiry-title text-center">
                             Enquiry Form | Session 2027–2028
                         </h2>
-                        <div id="AdmissionFormPopup"
-                            class="relative mt-5  bg-green-500 text-white px-4 py-2 rounded mb-5 hidden"
-                            style="z-index:999">
-                            Form submitted successfully!
-                        </div>
-                        <div class="mt-10">
-                            <form id="AdmissionForm" method="post">
-                                <div class="mt-4">
-                                    <select name="session" required id="asession" class="w-full border border-gray-300 p-2 rounded-md text-gray-500">
-                                        <option value="" disabled selected>Enquiry For Session</option>
-                                        <?php
-                                        $sessions = include "includes/session-api.php";
-                                        foreach ($sessions as $item):
-                                            $sess = $item['session'] ?? '';
-                                            if (empty($sess)) continue;
-                                        ?>
-                                            <option value="<?= htmlspecialchars($sess) ?>">
-                                                <?= htmlspecialchars($sess) ?>
-                                            </option>
-                                        <?php endforeach; ?>
-                                    </select>
-                                </div>
-                                <!-- Class selection -->
-                                <div class="mt-4">
-                                    <select name="class-selection" id="agrade" required class="w-full border border-gray-300 p-[11px] rounded-md text-[#808080cc]">
-                                        <option value="" disabled selected>Select Grade</option>
-                                        <?php
-                                        $grades = include 'includes/grade-api.php';
-                                        $uniqueGrades = array_unique(array_column($grades, 'grades'));
-
-                                        // Desired order for DPS Eldeco
-                                        $gradeOrder = [
-                                            'P.G', 'Nursery', 'Prep',
-                                            'I', 'II', 'III', 'IV', 'V',
-                                            'VI', 'VII', 'VIII', 'IX',
-                                            'X', 'XI', 'XII'
-                                        ];
-
-                                        // Sort the unique grades according to $gradeOrder
-                                        usort($uniqueGrades, function ($a, $b) use ($gradeOrder) {
-                                            $posA = array_search($a, $gradeOrder);
-                                            $posB = array_search($b, $gradeOrder);
-                                            // Put grades not in the order list at the end
-                                            $posA = ($posA === false) ? 999 : $posA;
-                                            $posB = ($posB === false) ? 999 : $posB;
-                                            return $posA - $posB;
-                                        });
-
-                                        foreach ($uniqueGrades as $gradeName):
-                                        ?>
-                                            <option value="<?= htmlspecialchars($gradeName) ?>"><?= htmlspecialchars($gradeName) ?></option>
-                                        <?php endforeach; ?>
-                                    </select>
-                                </div>
-
-                                <!-- Student name -->
-                                <div class="mt-4">
-                                    <input type="text" name="student-name" id="astudent_name" placeholder="Student Name"
-                                        class="w-full border border-gray-300 p-[11px] rounded-md outline-none" required>
-                                    <span id="astudent-error" class="text-red-500 text-sm mt-1 hidden">Only letters and spaces allowed.</span>
-                                </div>
-
-                                <!-- Parent name -->
-                                <div class="mt-4">
-                                    <input type="text" name="parent-name" id="aparent_name" placeholder="Parents Name"
-                                        class="w-full border border-gray-300 p-[11px] rounded-md outline-none">
-                                    <span id="aparent-error" class="text-red-500 text-sm mt-1 hidden">Only letters and spaces allowed.</span>
-                                </div>
-
-                                <!-- Mobile number -->
-                                <div class="mt-4">
-                                    <input type="text" name="mobile" id="amobile" placeholder="Mobile Number" maxlength="10"
-                                        class="w-full border border-gray-300 p-[11px] rounded-md outline-none">
-                                    <div id="amobile-error" class="text-red-500 text-sm mt-1 hidden">Please enter valid phone number</div>
-                                </div>
-
-                                <!-- Email -->
-                                <div class="mt-4">
-                                    <input type="text" name="email" id="aemail" placeholder="Email"
-                                        class="w-full border border-gray-300 p-[11px] rounded-md outline-none">
-                                    <span id="aemail-error" class="text-red-500 text-sm mt-1 hidden">Please enter a valid email address.</span>
-                                </div>
-
-                                <!-- City -->
-                                <div class="mt-4 relative customSelect">
-                                    <select id="acity" name="city" class="hidden">
-                                        <option value="">Select City</option>
-                                        <?php
-                                        $cities = include 'includes/get-city.php';
-                                        foreach ($cities as $city):
-                                            $ct = $city['name'] ?? '';
-                                            if (empty($ct)) continue;
-                                        ?>
-                                            <option value="<?= htmlspecialchars($ct) ?>">
-                                                <?= htmlspecialchars($ct) ?>
-                                            </option>
-                                        <?php endforeach; ?>
-                                        <?php if (empty($cities)): ?>
-                                            <option value="">No cities available</option>
-                                        <?php endif; ?>
-                                    </select>
-
-                                    <!-- Fake dropdown display -->
-                                    <div class="border border-gray-300 p-[11px] rounded-md bg-white cursor-pointer flex justify-between items-center">
-                                        <span class="selected-text text-[#808080cc]">Select City</span>
-                                        <span>▼</span>
-                                    </div>
-
-                                    <!-- Dropdown options -->
-                                    <div class="absolute mt-1 border border-gray-300 rounded-md bg-white shadow-md hidden z-50 w-full">
-                                        <input type="text" placeholder="Search..."
-                                            class="w-full p-2 border-b border-gray-300 outline-none">
-                                        <ul class="max-h-48 overflow-y-auto"></ul>
-                                    </div>
-                                </div>
-
-                                <!-- Pincode -->
-                                <div class="mt-4">
-                                    <div>
-                                        <input type="text" name="pincode" id="apincode" placeholder="Pincode"
-                                            class="w-full border border-gray-300 p-[11px] rounded-md" maxlength="6" oninput="this.value=this.value.replace(/\D/g,'')" required>
-                                        <span id="apincode-error" class="text-red-500 text-sm hidden">Please enter a valid Pincode.</span>
-                                    </div>
-                                    <!-- Terms -->
-                                    <div class="mt-4 flex items-center gap-2">
-                                        <input type="checkbox" id="terms" required>
-                                        <label for="terms">I agree to <a href="termsandconditions"
-                                                class="text-blue-500 underline">Terms and
-                                                Conditions</a>.</label>
-                                    </div>
-                                    <input type="hidden" name="source" id="source">
-                                    <!-- Submit -->
-                                    <div class="mt-4">
-                                        <button type="submit" id="AsubmitBtn"
-                                            class="p-4 bg-blue-main w-full text-white font-semibold text-[18px] rounded hover:bg-red-500 transition">
-                                            Submit
-                                        </button>
-                                    </div>
-                                </div>
-                            </form>
+                        <div class="mt-5">
+                            <div id="ee-form-process" style="width: 100%; max-width: 800px; margin: 0 auto; box-sizing: border-box;"></div>
                         </div>
                     </div>
                 </div>
@@ -392,6 +254,7 @@ html, body {
     </script>
 
     <script>
+        if (document.getElementById("AdmissionForm")) {
         (function() {
             function getParam(name) {
                 const urlParams = new URLSearchParams(window.location.search);
@@ -574,6 +437,7 @@ html, body {
                     AsubmitBtn.textContent = "Submit";
                 });
         });
+        }
     </script>
 
     <?php include "includes/foot.php" ?>
