@@ -1,0 +1,43 @@
+RewriteEngine On
+
+# Live: site is served from domain root. Local subfolder: see note at top.
+# RewriteBase is omitted to work in both localhost subfolder and production root
+
+<IfModule mod_headers.c>
+Header set Access-Control-Allow-Origin "*"
+Header set Access-Control-Allow-Methods "GET, POST, OPTIONS"
+Header set Access-Control-Allow-Headers "Content-Type, Authorization"
+</IfModule>
+
+# Production: redirect /Site requests to live site (skip localhost)
+RewriteCond %{HTTP_HOST} !^(localhost|127\.0\.0\.1)$ [NC]
+RewriteCond %{REQUEST_URI} ^/Site [NC]
+RewriteRule ^.*$ https://dpseldeco.com/? [R=301,L]
+
+# Redirect www to non-www (skip for localhost)
+RewriteCond %{HTTP_HOST} ^www\.(.+)$ [NC]
+RewriteCond %{HTTP_HOST} !^(localhost|127\.0\.0\.1) [NC]
+RewriteRule ^ https://%1%{REQUEST_URI} [R=301,L]
+
+# Redirect all HTTP to HTTPS (skip for localhost)
+RewriteCond %{HTTPS} !=on
+RewriteCond %{HTTP_HOST} !^(localhost|127\.0\.0\.1) [NC]
+RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+
+
+
+# Redirect .php to clean URL (SEO)
+RewriteCond %{THE_REQUEST} /([^.]+)\.php [NC]
+RewriteRule ^(.+)\.php$ $1 [R=301,L]
+
+# Internally rewrite clean URLs to actual .php files
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME}.php -f
+RewriteRule ^(.+)$ $1.php [L]
+# -----------------------------
+
+# Friendly URL rewrites
+RewriteRule ^home index.php [NC,L]
+RewriteRule ^blog/([A-Za-z0-9-]+)  detail.php?slug=$1  [NC,L]
+RewriteRule ^view/([A-Za-z0-9-]+)  detail-view.php?slug=$1  [NC,L]
