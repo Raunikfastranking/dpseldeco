@@ -21,36 +21,26 @@ $pageApiUrl = "https://dps.allenhouseschools.com/api/pages/$pageSlug";
 
 // Fetch page data
 require_once __DIR__ . '/proxy/config.php';
-require_once __DIR__ . '/includes/api-cache.php';
 
-$pageCacheKey = 'page_' . md5($pageSlug);
-$pageData2 = dps_cache_get($pageCacheKey);
+$pageCh = curl_init($pageApiUrl);
+curl_setopt_array($pageCh, [
+    CURLOPT_RETURNTRANSFER => true,
+    CURLOPT_TIMEOUT        => 15,
+    CURLOPT_CONNECTTIMEOUT => 5,
+    CURLOPT_SSL_VERIFYPEER => false,
+    CURLOPT_HTTPHEADER     => api_auth_headers(),
+]);
+$pageResponse = curl_exec($pageCh);
+$pageHttpCode = curl_getinfo($pageCh, CURLINFO_HTTP_CODE);
+curl_close($pageCh);
 
-if ($pageData2 === null) {
-    $pageCh = curl_init($pageApiUrl);
-    curl_setopt_array($pageCh, [
-        CURLOPT_RETURNTRANSFER => true,
-        CURLOPT_TIMEOUT        => 15,
-        CURLOPT_CONNECTTIMEOUT => 5,
-        CURLOPT_SSL_VERIFYPEER => false,
-        CURLOPT_HTTPHEADER     => api_auth_headers(),
-    ]);
-    $pageResponse = curl_exec($pageCh);
-    $pageHttpCode = curl_getinfo($pageCh, CURLINFO_HTTP_CODE);
-    curl_close($pageCh);
-
-    if ($pageResponse !== false && !empty($pageResponse) && $pageHttpCode === 200) {
-        $decoded = json_decode($pageResponse, true);
-        if ($decoded !== null) {
-            dps_cache_set($pageCacheKey, $decoded);
-            $pageData2 = $decoded;
-        }
-    }
-    if ($pageData2 === null) {
-        $pageData2 = dps_cache_get_stale($pageCacheKey);
-    }
+if ($pageResponse === false || empty($pageResponse) || $pageHttpCode !== 200) {
+    header("HTTP/1.0 404 Not Found");
+    include "404.php";
+    exit;
 }
 
+$pageData2 = json_decode($pageResponse, true);
 if (!isset($pageData2['data']) || empty($pageData2['data'])) {
     header("HTTP/1.0 404 Not Found");
     include "404.php";
@@ -127,6 +117,20 @@ $heading = $pageData2['data']['sections'][0]['content_heading'] ?? '';
         $gallerySubtype = null;
         $showGallery = false;
 
+        // Sections whose gallery is already resolved inline by the API
+        // (resolved_content) are rendered by renderDynamicSections() above,
+        // so they must not trigger the fallback album listing below.
+        $hasInlineGallery = false;
+        if (!empty($pageData2['data']['sections'])) {
+            foreach ($pageData2['data']['sections'] as $section) {
+                if (($section['section_type'] ?? null) === 'gallery'
+                    && !empty($section['resolved_content'])) {
+                    $hasInlineGallery = true;
+                    break;
+                }
+            }
+        }
+
         // FIRST: Check if this page is associated with a gallery via page_id in gallery data
         // This is the most reliable method since your galleries have page_id field
         if (!empty($photo_gallery_data['data'])) {
@@ -143,10 +147,12 @@ $heading = $pageData2['data']['sections'][0]['content_heading'] ?? '';
             }
         }
 
-        // SECOND: Check if page has sections with gallery type
+        // SECOND: Check if page has sections with gallery type that were NOT
+        // already rendered inline (no resolved_content)
         if (!$showGallery && !empty($pageData2['data']['sections'])) {
             foreach ($pageData2['data']['sections'] as $section) {
-                if (isset($section['section_type']) && $section['section_type'] === 'gallery') {
+                if (isset($section['section_type']) && $section['section_type'] === 'gallery'
+                    && empty($section['resolved_content'])) {
                     $showGallery = true;
                     if (!empty($section['gallery_subtype'])) {
                         $gallerySubtype = $section['gallery_subtype'];
@@ -329,7 +335,7 @@ $heading = $pageData2['data']['sections'][0]['content_heading'] ?? '';
                     echo '</div>';
                 }
             }
-        } else {
+        } elseif (!$hasInlineGallery) {
             // Optional: Show message when no gallery should be displayed
             echo '<div class="container mx-auto px-4 py-8 text-gray-400 text-center">';
             echo 'No gallery content configured for this page.';
