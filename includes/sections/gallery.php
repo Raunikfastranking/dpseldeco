@@ -4,7 +4,7 @@
     $galleryId    = $gallery['id'] ?? '';
     $galleryTitle = $gallery['gallery_title'] ?? $gallery['heading'] ?? $data['title'] ?? '';
     $galleryType  = $gallery['gallery_type'] ?? 'gallery';
-    $detailUrl    = 'gallery-detail.php?id=' . urlencode((string) $galleryId);
+    $detailUrl    = 'gallery-detail?id=' . urlencode((string) $galleryId);
 
     $coverImage = null;
     foreach ($mediaItems as $m) {
