@@ -557,6 +557,15 @@ $pageData = $pageDataMap[$currentPage] ?? null; // null if page not found
             popup.addEventListener("click", event => {
                 if (event.target === popup) popup.classList.add("hidden");
             });
+
+            // Hide the enquiry form popup when the widget shows its thank-you feedback
+            const feedbackObserver = new MutationObserver(() => {
+                const modal = document.querySelector("body > .jquery-modal:has(.ee-form-widget-feedback)");
+                if (modal && getComputedStyle(modal).display !== "none") {
+                    popup.classList.add("hidden");
+                }
+            });
+            feedbackObserver.observe(document.body, { childList: true, subtree: true });
         }
 
         window.ee_form_widget_baseurl = "https://eeconfigstaticfiles.blob.core.windows.net/staticfiles/ee-form-widget/";
