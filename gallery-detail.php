@@ -24,6 +24,35 @@ if ($id !== null) {
             }
         }
     }
+
+    // Page-attached galleries (e.g. achievements linked to a page) are not
+    // returned by the list endpoints, so fetch the gallery directly.
+    if ($gallery === null && ctype_digit((string)$id)) {
+        $cacheKey = 'api_' . md5('/galleries/' . $id);
+        $cached = dps_cache_get($cacheKey);
+        if ($cached === null) {
+            $ch = curl_init("https://dps.allenhouseschools.com/api/galleries/" . $id);
+            curl_setopt_array($ch, [
+                CURLOPT_RETURNTRANSFER => true,
+                CURLOPT_TIMEOUT        => 15,
+                CURLOPT_CONNECTTIMEOUT => 5,
+                CURLOPT_SSL_VERIFYPEER => false,
+                CURLOPT_HTTPHEADER     => api_auth_headers(),
+            ]);
+            $content = curl_exec($ch);
+            $code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+            curl_close($ch);
+            $cached = ($content !== false && $code === 200) ? json_decode($content, true) : null;
+            if ($cached !== null) {
+                dps_cache_set($cacheKey, $cached);
+            } else {
+                $cached = dps_cache_get_stale($cacheKey);
+            }
+        }
+        if (!empty($cached['data']) && (string)($cached['data']['id'] ?? '') === (string)$id) {
+            $gallery = $cached['data'];
+        }
+    }
 }
 
 // Fallbacks
