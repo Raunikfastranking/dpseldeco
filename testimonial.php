@@ -1,6 +1,16 @@
 <?php
 include "includes/apis.php";
- $videos = $testimonial_data['data']['sections'][2]['resolved_content']['media'] ?? [];
+
+$videos = [];
+foreach ($testimonial_data['data']['sections'] ?? [] as $section) {
+    if (($section['section_type'] ?? '') !== 'video') {
+        continue;
+    }
+    foreach (($section['resolved_content']['media'] ?? []) as $media) {
+        $videos[$media['id'] ?? count($videos)] = $media;
+    }
+}
+$videos = array_values($videos);
 
 ?>
 <html lang="en">
@@ -240,7 +250,14 @@ include "includes/apis.php";
                                 <div class=" overflow-hidden mt-1" data-glide-el="track">
                                     <ul class="glide__slides">
                                         <?php
-                                        $testimonial_data =  $home_data['data']['sections'][10]['resolved_content']['items'] ?? [];
+                                        $testimonial_data = [];
+                                        foreach ($home_data['data']['sections'] ?? [] as $section) {
+                                            if (stripos($section['title'] ?? '', 'testimonial') !== false
+                                                && !empty($section['resolved_content']['items'])) {
+                                                $testimonial_data = $section['resolved_content']['items'];
+                                                break;
+                                            }
+                                        }
                                           if (empty($testimonial_data)) {
                                             echo "<p>No data available</p>";
                                         } else {
@@ -272,44 +289,47 @@ include "includes/apis.php";
                             </div>
 
                             <div id="tab-2" class="tab-content Testimonials2">
-                                <div class=" overflow-hidden mt-1" data-glide-el="track">
-                                    <ul
-                                        class="mt-1 relative w-full overflow-hidden p-0 pb-5 whitespace-no-wrap flex gap-3 flex-no-wrap">
+                                <ul class="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-1 p-0 list-none">
 
-                                        <?php
-                                       
+                                    <?php
+                                   
 
-                                        if (empty($videos)) {
-                                            echo "<p>No data available</p>";
-                                        } else {
-                                            foreach ($videos as $video) {
-                                                $videoUrl = $video["media_url"] ?? '';
-                                                $embedUrl = "";
+                                    if (empty($videos)) {
+                                        echo "<p>No data available</p>";
+                                    } else {
+                                        $video_index = 0;
+                                        foreach ($videos as $video) {
+                                            $videoUrl = $video["media_url"] ?? $video["page_link"] ?? '';
+                                            $embedUrl = "";
 
-                                                if (strpos($videoUrl, 'youtube') !== false) {
-                                                    // Extract video ID
-                                                    preg_match('/(youtu\.be\/|v=)([^&]+)/', $videoUrl, $matches);
-                                                    $videoId = $matches[2] ?? '';
-
-                                                    if ($videoId) {
-                                                        $embedUrl = "https://www.youtube.com/embed/" . $videoId;
-                                                    }
-                                                }
-                                                ?>
-                                                <li>
-                                                    <div class="w-full rounded-2xl shadow-lg sm:p-5 p-2">
-                                                        <iframe class="w-[100%] h-[300px]" src="<?php echo $embedUrl; ?>"
-                                                            allowfullscreen></iframe>
-                                                    </div>
-                                                </li>
-                                            <?php
+                                            if (!empty($videoUrl) && preg_match(
+                                                '/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/|youtube\.com\/shorts\/)([^&\?\/]+)/i',
+                                                $videoUrl,
+                                                $matches
+                                            )) {
+                                                $embedUrl = "https://www.youtube.com/embed/" . $matches[1];
                                             }
+                                            if (empty($embedUrl)) {
+                                                continue;
+                                            }
+                                            $video_index++;
+                                            ?>
+                                            <li>
+                                                <div class="w-full rounded-2xl shadow-lg sm:p-5 p-2">
+                                                    <iframe class="w-[100%] h-[300px]" src="<?= $embedUrl ?>"
+                                                        title="Video Testimonial <?= $video_index ?>"
+                                                        frameborder="0"
+                                                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                                        allowfullscreen loading="lazy"></iframe>
+                                                </div>
+                                            </li>
+                                        <?php
                                         }
-                                        ?>
+                                    }
+                                    ?>
 
 
-                                    </ul>
-                                </div>
+                                </ul>
                             </div>
                         </div>
                     </div>
@@ -326,9 +346,6 @@ include "includes/apis.php";
 
     <script>
  
-        let glide1Initialized = false;
-        let glide2Initialized = false;
-
         function initGlide(selector, perViewCount) {
             return new Glide(selector, {
                 type: 'carousel',
@@ -357,7 +374,6 @@ include "includes/apis.php";
         
         const glide1 = initGlide('.Testimonials', 2);
         glide1.mount();
-        glide1Initialized = true;
 
         
         document.querySelectorAll('.tab-link').forEach(tab => {
@@ -371,13 +387,6 @@ include "includes/apis.php";
                
                 document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('current'));
                 document.getElementById(tabId).classList.add('current');
-
-                
-                if (tabId === 'tab-2' && !glide2Initialized) {
-                    const glide2 = initGlide('.Testimonials2', 2);
-                    glide2.mount();
-                    glide2Initialized = true;
-                }
             });
         });
     </script>
