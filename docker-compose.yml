@@ -1,0 +1,7 @@
+services:
+  web:
+    build: .
+    container_name: dpseldeco-web
+    ports:
+      - "7001:80"
+    restart: unless-stopped

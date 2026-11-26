@@ -29,26 +29,26 @@ Header set Access-Control-Allow-Headers "Content-Type, Authorization"
     AddOutputFilterByType DEFLATE text/html text/css text/plain application/javascript application/json image/svg+xml
 </IfModule>
 
-# Production: redirect /Site requests to live site (skip localhost)
-RewriteCond %{HTTP_HOST} !^(localhost|127\.0\.0\.1)$ [NC]
+# Production: redirect /Site requests to live site (skip localhost, any port)
+RewriteCond %{HTTP_HOST} !^(localhost|127\.0\.0\.1)(:\d+)?$ [NC]
 RewriteCond %{REQUEST_URI} ^/Site [NC]
 RewriteRule ^.*$ https://dpseldeco.com/? [R=301,L]
 
 # Redirect www to non-www (skip for localhost)
 RewriteCond %{HTTP_HOST} ^www\.(.+)$ [NC]
-RewriteCond %{HTTP_HOST} !^(localhost|127\.0\.0\.1) [NC]
+RewriteCond %{HTTP_HOST} !^(localhost|127\.0\.0\.1)(:\d+)?$ [NC]
 RewriteRule ^ https://%1%{REQUEST_URI} [R=301,L]
 
-# Redirect all HTTP to HTTPS (skip for localhost)
+# Redirect all HTTP to HTTPS (skip for localhost, any port)
 RewriteCond %{HTTPS} !=on
-RewriteCond %{HTTP_HOST} !^(localhost|127\.0\.0\.1) [NC]
+RewriteCond %{HTTP_HOST} !^(localhost|127\.0\.0\.1)(:\d+)?$ [NC]
 RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
 
 
 
 # Redirect .php to clean URL (SEO)
-RewriteCond %{THE_REQUEST} /([^.]+)\.php [NC]
-RewriteRule ^(.+)\.php$ $1 [R=301,L]
+RewriteCond %{THE_REQUEST} \s/+([^.]+)\.php[\s?] [NC]
+RewriteRule ^ /%1 [R=301,L]
 
 # Internally rewrite clean URLs to actual .php files
 RewriteCond %{REQUEST_FILENAME} !-d

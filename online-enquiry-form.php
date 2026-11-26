@@ -19,7 +19,7 @@
         <div class="mt-10 w-full max-w-[1100px] mx-auto px-4 sm:px-5">
             <div class="relative">
                 <h2 class="online-enquiry-title text-center">
-                    Enquiry Form | Session 2026–2027
+                    Enquiry Form | Session 2027-2028
                 </h2>
 
                 <div class="mt-5 mx-auto" id="ee-form-15" style="width: 100%; max-width: 800px; box-sizing: border-box;">
