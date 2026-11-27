@@ -29,8 +29,7 @@ if ($id !== null) {
     // returned by the list endpoints, so fetch the gallery directly.
     if ($gallery === null && ctype_digit((string)$id)) {
         $cacheKey = 'api_' . md5('/galleries/' . $id);
-        $cached = dps_cache_get($cacheKey);
-        if ($cached === null) {
+        $cached = dps_swr($cacheKey, function () use ($id, $cacheKey) {
             $ch = curl_init("https://dps.allenhouseschools.com/api/galleries/" . $id);
             curl_setopt_array($ch, [
                 CURLOPT_RETURNTRANSFER => true,
@@ -42,13 +41,13 @@ if ($id !== null) {
             $content = curl_exec($ch);
             $code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
             curl_close($ch);
-            $cached = ($content !== false && $code === 200) ? json_decode($content, true) : null;
-            if ($cached !== null) {
-                dps_cache_set($cacheKey, $cached);
-            } else {
-                $cached = dps_cache_get_stale($cacheKey);
+            $decoded = ($content !== false && $code === 200) ? json_decode($content, true) : null;
+            if ($decoded !== null) {
+                dps_cache_set($cacheKey, $decoded);
+                return $decoded;
             }
-        }
+            return dps_cache_get_stale($cacheKey);
+        });
         if (!empty($cached['data']) && (string)($cached['data']['id'] ?? '') === (string)$id) {
             $gallery = $cached['data'];
         }

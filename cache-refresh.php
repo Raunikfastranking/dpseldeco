@@ -14,7 +14,7 @@ if ($key === '' || !hash_equals(DPS_CACHE_REFRESH_KEY, $key)) {
 header('Content-Type: text/plain; charset=utf-8');
 @set_time_limit(120);
 
-dps_cache_clear();
+dps_cache_clear_all();
 
 $__start = microtime(true);
 define('DPS_API_FORCE_REFRESH', true);
